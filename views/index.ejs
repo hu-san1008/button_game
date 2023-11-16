@@ -15,7 +15,18 @@
         <p id="score">スコア: 0</p>
         <p id="timer">残り時間: 30秒</p>
         <hr>
-    <h2>現在のランキング</h2>
+
+        <h2>現在のランキング</h2>
+        <ul>
+            <% if (ranking && ranking.length > 0) { %>
+                <% for (const entry of ranking) { %>
+                    <li><%= entry.score %></li>
+                <% } %>
+            <% } else { %>
+                <li>ランキングデータがありません</li>
+            <% } %>
+        </ul>
+        
     </div>
 
     

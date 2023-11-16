@@ -1,6 +1,6 @@
 const express = require("express");
 const mysql = require("mysql");
-const bodyParser = require("body-parser"); // body-parser ミドルウェアを追加
+const bodyParser = require("body-parser");
 
 const app = express();
 
@@ -8,15 +8,12 @@ const PORT = 5000;
 
 app.set("view engine", "ejs");
 app.use(express.static("public"));
-
-// body-parserの設定
 app.use(bodyParser.json());
 
-// MySQLに接続
 const connection = mysql.createConnection({
   host: "localhost",
-  user: "root", // ご自身のMySQLのユーザー名
-  password: "", // ご自身のMySQLのパスワード
+  user: "root",
+  password: "",
   database: "button_game_db"
 });
 
@@ -29,10 +26,21 @@ connection.connect(err => {
 });
 
 app.get("/", (req, res) => {
-  res.render("index", { text: "nodejsとexpress" });
+  // データベースからスコアを取得して降順に並べ替えるクエリ
+  const query = "SELECT * FROM button_game_score ORDER BY score DESC";
+
+  connection.query(query, (err, results) => {
+    if (err) {
+      console.error("データベースからの取得中にエラーが発生しました: " + err);
+      res.status(500).send("エラーが発生しました。");
+      return;
+    }
+
+    // ランキングデータをEJSテンプレートに渡して表示
+    res.render("index", { ranking: results });
+  });
 });
 
-// スコアを保存するエンドポイント
 app.post("/save-score", (req, res) => {
   const { score } = req.body;
 
@@ -44,7 +52,19 @@ app.post("/save-score", (req, res) => {
       res.status(500).send("エラーが発生しました。");
       return;
     }
-    res.status(200).send("スコアがデータベースに保存されました。");
+
+    // 保存後、再度ランキングを取得してテンプレートに渡す
+    const selectQuery = "SELECT * FROM button_game_score ORDER BY score DESC";
+    connection.query(selectQuery, (err, rankingResults) => {
+      if (err) {
+        console.error("データベースからの取得中にエラーが発生しました: " + err);
+        res.status(500).send("エラーが発生しました。");
+        return;
+      }
+
+      // ランキングデータをEJSテンプレートに渡して表示
+      res.render("index", { ranking: rankingResults });
+    });
   });
 });
 
